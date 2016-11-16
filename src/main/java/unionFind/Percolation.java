@@ -51,7 +51,6 @@ public class Percolation {
             checkAndUniteWithNeighbour(row, col, row, col - 1);
         if (col < n)
             checkAndUniteWithNeighbour(row, col, row, col + 1);
-//        if (percolates())
     }
 
     private void checkAndUniteWithNeighbour(int row, int col, int neighbourRow, int neighbourCol) {

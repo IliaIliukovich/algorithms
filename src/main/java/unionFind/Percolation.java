@@ -5,7 +5,6 @@ import edu.princeton.cs.algs4.StdOut;
 public class Percolation {
 
     private int[] grid;
-    private int[] sz;
     private final int n;
 
     public Percolation(int n) {
@@ -16,10 +15,6 @@ public class Percolation {
             grid[i] = -1;
         }
         grid[grid.length - 1] = grid.length - 1;
-        sz = new int[this.n * this.n + 2];
-        for (int i = 0; i < sz.length; i++) {
-            sz[i] = 1;
-        }
     }
 
     public void open(int row, int col) {
@@ -29,14 +24,14 @@ public class Percolation {
             if (!isOpen(row, col)) {
                 if (row == 1) {
                     grid[indexOf(row, col)] = 0;
-                    sz[0]++;
+                    uniteWithNeighbours(row, col);
                 } else if (row == n) {
                     grid[indexOf(row, col)] = grid.length - 1;
-                    sz[grid.length - 1]++;
+                    bottomUniteWithNeighbours(row, col);
                 } else {
                     grid[indexOf(row, col)] = indexOf(row, col);
+                    uniteWithNeighbours(row, col);
                 }
-                uniteWithNeighbours(row, col);
             }
         } else {
             grid[1] = 0;
@@ -55,31 +50,52 @@ public class Percolation {
             checkAndUniteWithNeighbour(row, col, row, col + 1);
     }
 
+    private void bottomUniteWithNeighbours(int row, int col) {
+        bottomCheckAndUniteWithNeighbour(row, col, row - 1, col);
+        if (col > 1)
+            bottomCheckAndUniteWithBottom(row, col, row, col - 1);
+        if (col < n)
+            bottomCheckAndUniteWithBottom(row, col, row, col + 1);
+    }
+
     private void checkAndUniteWithNeighbour(int row, int col, int neighbourRow, int neighbourCol) {
+        if (isOpen(neighbourRow, neighbourCol)) {
+            int ownRoot = subRoot(indexOf(row, col));
+            int neighbourRoot = subRoot(indexOf(neighbourRow, neighbourCol));
+            if (ownRoot == neighbourRoot) return;
+            if (ownRoot < neighbourRoot) {
+                grid[ownRoot] = neighbourRoot;
+            } else {
+                grid[neighbourRoot] = ownRoot;
+            }
+        }
+    }
+
+    private void bottomCheckAndUniteWithNeighbour(int row, int col, int neighbourRow, int neighbourCol) {
         if (isOpen(neighbourRow, neighbourCol)) {
             int ownRoot = root(indexOf(row, col));
             int neighbourRoot = root(indexOf(neighbourRow, neighbourCol));
             if (ownRoot == neighbourRoot) return;
+            grid[neighbourRoot] = indexOf(row, col);
+        }
+    }
 
-            if (sz[ownRoot] < sz[neighbourRoot]) {
-                grid[ownRoot] = neighbourRoot;
-                sz[neighbourRoot] += sz[ownRoot];
-            } else {
-                grid[neighbourRoot] = ownRoot;
-                sz[ownRoot] += sz[neighbourRoot];
-            }
-
-//            if (ownRoot > neighbourRoot) {
-//                grid[ownRoot] = root(indexOf(neighbourRow, neighbourCol));
-//            } else {
-//                grid[neighbourRoot] = root(indexOf(row, col));
-//            }
+    private void bottomCheckAndUniteWithBottom(int row, int col, int neighbourRow, int neighbourCol) {
+        if (isOpen(neighbourRow, neighbourCol)) {
+                grid[indexOf(row, col)] = indexOf(neighbourRow, neighbourCol);
         }
     }
 
     private int root(int index) {
         while (index != grid[index]) {
 //            grid[index] = grid[grid[index]];
+            index = grid[index];
+        }
+        return index;
+    }
+
+    private int subRoot(int index) {
+        while (index != grid[index] && grid[index] <= indexOf(n, n)) {
             index = grid[index];
         }
         return index;
@@ -92,17 +108,17 @@ public class Percolation {
     }
 
     public boolean isFull(int row, int col)  {
-        return (isOpen(row, col)) && root(indexOf(row, col)) == root(0);
+        return (isOpen(row, col)) && subRoot(indexOf(row, col)) == subRoot(0);
     }
 
     public boolean percolates() {
-        print();
+//        print();
         return root(0) == root(grid.length - 1);
     }
 
     private void print() {
         StdOut.println(grid[0]);
-        for (int i = 1 ; i <= n ; i++) {
+        for (int i = 1; i <= n; i++) {
             for (int j = 1; j <= n; j++) {
                 if (grid[indexOf(i, j)] != -1)StdOut.print(String.format("%3d ", grid[indexOf(i, j)]));
                 else StdOut.print("xxx ");

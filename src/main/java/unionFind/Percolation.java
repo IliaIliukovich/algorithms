@@ -29,8 +29,10 @@ public class Percolation {
             if (!isOpen(row, col)) {
                 if (row == 1) {
                     grid[indexOf(row, col)] = 0;
+                    sz[0]++;
                 } else if (row == n) {
                     grid[indexOf(row, col)] = grid.length - 1;
+                    sz[grid.length - 1]++;
                 } else {
                     grid[indexOf(row, col)] = indexOf(row, col);
                 }
@@ -77,7 +79,7 @@ public class Percolation {
 
     private int root(int index) {
         while (index != grid[index]) {
-            grid[index] = grid[grid[index]];
+//            grid[index] = grid[grid[index]];
             index = grid[index];
         }
         return index;
@@ -94,7 +96,7 @@ public class Percolation {
     }
 
     public boolean percolates() {
-//        print();
+        print();
         return root(0) == root(grid.length - 1);
     }
 

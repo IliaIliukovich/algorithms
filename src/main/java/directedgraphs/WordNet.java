@@ -62,7 +62,6 @@ public class WordNet {
     public int distance(String nounA, String nounB) {
         if (!isNoun(nounA) || !isNoun(nounB)) throw new IllegalArgumentException();
         int minDistIndex = -1;
-
         int minDist = -1;
         for (Integer idA : nounsMap.get(nounA)) {
             for (Integer idB : nounsMap.get(nounB)) {
@@ -78,10 +77,6 @@ public class WordNet {
                 }
             }
         }
-
-//        for (int i = 0; i < synsetList.size(); i++) {
-//            System.out.println("i = " + i + " IsMarkedA = " + isMarkedA[i] + " IsMarkedB = " + isMarkedB[i] + " DistanseA = " + distanceA[i] + " DistanseB = " + distanceB[i] + " DistanseAB = " + distanceAB[i]);
-//        }
         return minDist;
     }
 
@@ -162,16 +157,6 @@ public class WordNet {
         return minDistIndex;
     }
 
-    private class Node {
-        int current;
-        int prev;
-
-        public Node(int current, int prev) {
-            this.current = current;
-            this.prev = prev;
-        }
-    }
-
     private void parseLine(String line, Map<Integer, List<Integer>> hypernymMap) {
         String[] split = line.split(",");
         int id = Integer.parseInt(split[0]);
@@ -181,6 +166,16 @@ public class WordNet {
         }
         if (!hypernymMap.containsKey(id)) {
             hypernymMap.put(id, hypernymList);
+        }
+    }
+
+    private class Node {
+        int current;
+        int prev;
+
+        public Node(int current, int prev) {
+            this.current = current;
+            this.prev = prev;
         }
     }
 

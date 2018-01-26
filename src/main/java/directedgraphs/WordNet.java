@@ -1,9 +1,17 @@
 package directedgraphs;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.*;
+import edu.princeton.cs.algs4.In;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.Set;
+import java.util.HashMap;
+
 
 public class WordNet {
 
@@ -15,25 +23,24 @@ public class WordNet {
 
         if (synsets == null || hypernyms == null) throw new IllegalArgumentException();
 
-        try {
-            synsetList = new ArrayList<>();
-            Files.lines(new File(synsets).toPath()).forEach(line -> {
-                synsetList.add(new Synset(line));
-            });
+        synsetList = new ArrayList<>();
+        In in = new In(synsets);
+        String line;
+        while ((line = in.readLine()) != null) {
+            synsetList.add(new Synset(line));
+        }
 
-            nounsMap = new TreeMap<>();
-            synsetList.forEach(synset -> {
-                synset.sinonims.forEach(sinonim -> {
-                    nounsMap.put(sinonim, synset.id);
-                });
+        nounsMap = new TreeMap<>();
+        synsetList.forEach(synset -> {
+            synset.sinonims.forEach(sinonim -> {
+                nounsMap.put(sinonim, synset.id);
             });
+        });
 
-            hypernymMap = new HashMap<>(synsetList.size());
-            Files.lines(new File(hypernyms).toPath()).forEach(line -> {
-                parseLine(line, hypernymMap);
-            });
-        } catch (IOException e) {
-            throw new IllegalArgumentException();
+        hypernymMap = new HashMap<>(synsetList.size());
+        in = new In(hypernyms);
+        while ((line = in.readLine()) != null) {
+            parseLine(line, hypernymMap);
         }
 
     }

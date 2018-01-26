@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Set;
 import java.util.HashMap;
+import java.util.Queue;
 
 
 public class WordNet {
@@ -57,13 +58,21 @@ public class WordNet {
     public int distance(String nounA, String nounB) {
         if (!isNoun(nounA) || !isNoun(nounB)) throw new IllegalArgumentException();
         int[] distanceAB = new int[synsetList.size()];
-        int minDistIndex = findMinDistIndex(nounA, nounB, new boolean[synsetList.size()], new boolean[synsetList.size()], new int[synsetList.size()], distanceAB);
+        final boolean[] isMarkedA = new boolean[synsetList.size()];
+        final boolean[] isMarkedB = new boolean[synsetList.size()];
+        final int[] distanceA = new int[synsetList.size()];
+        final int[] distanceB = new int[synsetList.size()];
+        int minDistIndex = findMinDistIndex(nounA, nounB, isMarkedA, isMarkedB, distanceA, distanceB, distanceAB);
+
+//        for (int i = 0; i < synsetList.size(); i++) {
+//            System.out.println("i = " + i + " IsMarkedA = " + isMarkedA[i] + " IsMarkedB = " + isMarkedB[i] + " DistanseA = " + distanceA[i] + " DistanseB = " + distanceB[i] + " DistanseAB = " + distanceAB[i]);
+//        }
         return minDistIndex == -1 ? minDistIndex : distanceAB[minDistIndex];
     }
 
     public String sap(String nounA, String nounB) {
         if (!isNoun(nounA) || !isNoun(nounB)) throw new IllegalArgumentException();
-        int minDistIndex = findMinDistIndex(nounA, nounB, new boolean[synsetList.size()], new boolean[synsetList.size()], new int[synsetList.size()], new int[synsetList.size()]);
+        int minDistIndex = findMinDistIndex(nounA, nounB, new boolean[synsetList.size()], new boolean[synsetList.size()], new int[synsetList.size()], new int[synsetList.size()] , new int[synsetList.size()]);
         if (minDistIndex != -1) {
             return synsetList.get(minDistIndex).print();
         } else {
@@ -73,19 +82,47 @@ public class WordNet {
 
     public static void main(String[] args) {
 
-        WordNet wordNet = new WordNet("D:\\ideaProjects\\algorithms3\\src\\test-data\\directedgraphs\\wordnet\\synsets100-subgraph.txt",
-                "D:\\ideaProjects\\algorithms3\\src\\test-data\\directedgraphs\\wordnet\\hypernyms100-subgraph.txt");
+        WordNet wordNet = new WordNet("D:\\ideaProjects\\algorithms3\\src\\test-data\\directedgraphs\\wordnet\\synsets11.txt",
+                "D:\\ideaProjects\\algorithms3\\src\\test-data\\directedgraphs\\wordnet\\hypernyms11AmbiguousAncestor.txt");
 
-        System.out.println("Distance = " + wordNet.distance("zymase", "zymase"));
-        System.out.println("Common ancestor = " + wordNet.sap("zymase", "zymase"));
-        System.out.println("Distance = " + wordNet.distance("transaminase", "transaminase"));
-        System.out.println("Common ancestor = " + wordNet.sap("transaminase", "transaminase"));
+        System.out.println("Distance = " + wordNet.distance("a", "b"));
+        System.out.println("Common ancestor = " + wordNet.sap("a", "b"));
 
     }
 
-    private int findMinDistIndex(String nounA, String nounB, boolean[] isMarkedA, boolean[] isMarkedB, int[] distanceA, int[] distanceAB) {
-        depthFirstSearchMark(nounsMap.get(nounA), isMarkedA, distanceA, 0);
-        depthFirstSearchFindMinDistance(nounsMap.get(nounB), hypernymMap, isMarkedA, isMarkedB, distanceA, distanceAB, 0);
+    private int findMinDistIndex(String nounA, String nounB, boolean[] isMarkedA, boolean[] isMarkedB, int[] distanceA, int[] distanceB, int[] distanceAB) {
+        Queue<Node> queue = new LinkedList<>();
+        queue.add(new Node(nounsMap.get(nounA), -1));
+        while (!queue.isEmpty()) {
+            Node node = queue.poll();
+            if (!isMarkedB[node.current]) {
+                isMarkedA[node.current] = true;
+                distanceA[node.current] = node.prev == -1 ? 0 : distanceA[node.prev] + 1;
+                if (hypernymMap.containsKey(node.current)) {
+                    for (Integer id : hypernymMap.get(node.current)) {
+                        queue.add(new Node(id, node.current));
+                    }
+                }
+            }
+        }
+
+        queue = new LinkedList<>();
+        queue.add(new Node(nounsMap.get(nounB), -1));
+        while (!queue.isEmpty()) {
+            Node node = queue.poll();
+            if (!isMarkedB[node.current]) {
+                isMarkedB[node.current] = true;
+                distanceB[node.current] = node.prev == -1 ? 0 : distanceB[node.prev] + 1;
+                if (isMarkedA[node.current]) {
+                    distanceAB[node.current] = distanceA[node.current] + distanceB[node.current];
+                }
+                if (hypernymMap.containsKey(node.current)) {
+                    for (Integer id : hypernymMap.get(node.current)) {
+                        queue.add(new Node(id, node.current));
+                    }
+                }
+            }
+        }
 
         int minDistIndex = -1;
         for (int i = 0; i < synsetList.size(); i++) {
@@ -96,36 +133,26 @@ public class WordNet {
         return minDistIndex;
     }
 
-    private void depthFirstSearchMark(Integer id, boolean[] isMarkedA, int[] distance, int curDistance) {
-        isMarkedA[id] = true;
-        distance[id] = curDistance;
-        if (hypernymMap.containsKey(id)) {
-            hypernymMap.get(id).forEach(e -> {
-                depthFirstSearchMark(e, isMarkedA, distance, curDistance + 1);
-            });
-        }
-    }
+    private class Node {
+        int current;
+        int prev;
 
-    private void depthFirstSearchFindMinDistance(Integer id, Map<Integer, List<Integer>> hypernymMap, boolean[] isMarkedA, boolean[] isMarkedB, int[] distanceA, int[] distanceAB, int curDistance) {
-        isMarkedB[id] = true;
-        if (isMarkedA[id]) {
-            distanceAB[id] = distanceA[id] + curDistance;
-        }
-        if (hypernymMap.containsKey(id)) {
-            hypernymMap.get(id).forEach(e -> {
-                depthFirstSearchFindMinDistance(e, hypernymMap, isMarkedA, isMarkedB, distanceA, distanceAB, curDistance + 1);
-            });
+        public Node(int current, int prev) {
+            this.current = current;
+            this.prev = prev;
         }
     }
 
     private void parseLine(String line, Map<Integer, List<Integer>> hypernymMap) {
         String[] split = line.split(",");
         int id = Integer.parseInt(split[0]);
-        List<Integer> hypernymList = new LinkedList<>();
+        List<Integer> hypernymList = hypernymMap.containsKey(id) ? hypernymMap.get(id) : new LinkedList<>();
         for (int i = 1; i < split.length; i++) {
             hypernymList.add(Integer.parseInt(split[i]));
         }
-        hypernymMap.put(id, hypernymList);
+        if (!hypernymMap.containsKey(id)) {
+            hypernymMap.put(id, hypernymList);
+        }
     }
 
     private class Synset {

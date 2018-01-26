@@ -17,7 +17,7 @@ import java.util.Queue;
 public class WordNet {
 
     private List<Synset> synsetList;
-    private Map<String, Integer> nounsMap;
+    private Map<String, List<Integer>> nounsMap;
     private Map<Integer, List<Integer>> hypernymMap;
 
     public WordNet(String synsets, String hypernyms) {
@@ -34,7 +34,11 @@ public class WordNet {
         nounsMap = new TreeMap<>();
         synsetList.forEach(synset -> {
             synset.sinonims.forEach(sinonim -> {
-                nounsMap.put(sinonim, synset.id);
+                List<Integer> list = (nounsMap.containsKey(sinonim)) ? nounsMap.get(sinonim) : new LinkedList();
+                list.add(synset.id);
+                if (!nounsMap.containsKey(sinonim)) {
+                    nounsMap.put(sinonim, list);
+                }
             });
         });
 
@@ -57,22 +61,45 @@ public class WordNet {
 
     public int distance(String nounA, String nounB) {
         if (!isNoun(nounA) || !isNoun(nounB)) throw new IllegalArgumentException();
-        int[] distanceAB = new int[synsetList.size()];
-        final boolean[] isMarkedA = new boolean[synsetList.size()];
-        final boolean[] isMarkedB = new boolean[synsetList.size()];
-        final int[] distanceA = new int[synsetList.size()];
-        final int[] distanceB = new int[synsetList.size()];
-        int minDistIndex = findMinDistIndex(nounA, nounB, isMarkedA, isMarkedB, distanceA, distanceB, distanceAB);
+        int minDistIndex = -1;
+
+        int minDist = -1;
+        for (Integer idA : nounsMap.get(nounA)) {
+            for (Integer idB : nounsMap.get(nounB)) {
+                int[] distanceAB = new int[synsetList.size()];
+                final boolean[] isMarkedA = new boolean[synsetList.size()];
+                final boolean[] isMarkedB = new boolean[synsetList.size()];
+                final int[] distanceA = new int[synsetList.size()];
+                final int[] distanceB = new int[synsetList.size()];
+                int curMinIndex = findMinDistIndex(idA, idB, isMarkedA, isMarkedB, distanceA, distanceB, distanceAB);
+                if (minDistIndex == -1 || curMinIndex != -1 && distanceAB[curMinIndex] < minDist) {
+                    minDistIndex = curMinIndex;
+                    minDist = distanceAB[curMinIndex];
+                }
+            }
+        }
 
 //        for (int i = 0; i < synsetList.size(); i++) {
 //            System.out.println("i = " + i + " IsMarkedA = " + isMarkedA[i] + " IsMarkedB = " + isMarkedB[i] + " DistanseA = " + distanceA[i] + " DistanseB = " + distanceB[i] + " DistanseAB = " + distanceAB[i]);
 //        }
-        return minDistIndex == -1 ? minDistIndex : distanceAB[minDistIndex];
+        return minDist;
     }
 
     public String sap(String nounA, String nounB) {
         if (!isNoun(nounA) || !isNoun(nounB)) throw new IllegalArgumentException();
-        int minDistIndex = findMinDistIndex(nounA, nounB, new boolean[synsetList.size()], new boolean[synsetList.size()], new int[synsetList.size()], new int[synsetList.size()] , new int[synsetList.size()]);
+
+        int minDistIndex = -1;
+        int minDist = -1;
+        for (Integer idA : nounsMap.get(nounA)) {
+            for (Integer idB : nounsMap.get(nounB)) {
+                int[] distanceAB = new int[synsetList.size()];
+                int curMinIndex = findMinDistIndex(idA, idB, new boolean[synsetList.size()], new boolean[synsetList.size()], new int[synsetList.size()], new int[synsetList.size()], distanceAB);
+                if (minDistIndex == -1 || curMinIndex != -1 && distanceAB[curMinIndex] < minDist) {
+                    minDistIndex = curMinIndex;
+                    minDist = distanceAB[curMinIndex];
+                }
+            }
+        }
         if (minDistIndex != -1) {
             return synsetList.get(minDistIndex).print();
         } else {
@@ -90,9 +117,9 @@ public class WordNet {
 
     }
 
-    private int findMinDistIndex(String nounA, String nounB, boolean[] isMarkedA, boolean[] isMarkedB, int[] distanceA, int[] distanceB, int[] distanceAB) {
+    private int findMinDistIndex(Integer idA, Integer idB, boolean[] isMarkedA, boolean[] isMarkedB, int[] distanceA, int[] distanceB, int[] distanceAB) {
         Queue<Node> queue = new LinkedList<>();
-        queue.add(new Node(nounsMap.get(nounA), -1));
+        queue.add(new Node(idA, -1));
         while (!queue.isEmpty()) {
             Node node = queue.poll();
             int curDist = node.prev == -1 ? 0 : distanceA[node.prev] + 1;
@@ -108,7 +135,7 @@ public class WordNet {
         }
 
         queue = new LinkedList<>();
-        queue.add(new Node(nounsMap.get(nounB), -1));
+        queue.add(new Node(idB, -1));
         while (!queue.isEmpty()) {
             Node node = queue.poll();
             int curDist = node.prev == -1 ? 0 : distanceB[node.prev] + 1;

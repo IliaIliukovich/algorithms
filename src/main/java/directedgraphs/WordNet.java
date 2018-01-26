@@ -95,9 +95,10 @@ public class WordNet {
         queue.add(new Node(nounsMap.get(nounA), -1));
         while (!queue.isEmpty()) {
             Node node = queue.poll();
-            if (!isMarkedB[node.current]) {
+            int curDist = node.prev == -1 ? 0 : distanceA[node.prev] + 1;
+            if (!isMarkedA[node.current] || curDist < distanceA[node.current]) {
                 isMarkedA[node.current] = true;
-                distanceA[node.current] = node.prev == -1 ? 0 : distanceA[node.prev] + 1;
+                distanceA[node.current] = curDist;
                 if (hypernymMap.containsKey(node.current)) {
                     for (Integer id : hypernymMap.get(node.current)) {
                         queue.add(new Node(id, node.current));
@@ -110,9 +111,10 @@ public class WordNet {
         queue.add(new Node(nounsMap.get(nounB), -1));
         while (!queue.isEmpty()) {
             Node node = queue.poll();
-            if (!isMarkedB[node.current]) {
+            int curDist = node.prev == -1 ? 0 : distanceB[node.prev] + 1;
+            if (!isMarkedB[node.current] || curDist < distanceB[node.current]) {
                 isMarkedB[node.current] = true;
-                distanceB[node.current] = node.prev == -1 ? 0 : distanceB[node.prev] + 1;
+                distanceB[node.current] = curDist;
                 if (isMarkedA[node.current]) {
                     distanceAB[node.current] = distanceA[node.current] + distanceB[node.current];
                 }

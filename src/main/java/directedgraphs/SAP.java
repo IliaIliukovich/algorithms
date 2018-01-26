@@ -10,7 +10,7 @@ public class SAP {
     private Digraph digraph;
 
     public SAP(Digraph G) {
-        this.digraph = G;
+        this.digraph = new Digraph(G);
     }
 
     public int length(int v, int w) {
@@ -32,11 +32,7 @@ public class SAP {
         for (Integer idA : v) {
             for (Integer idB : w) {
                 int[] distanceAB = new int[digraph.V()];
-                final boolean[] isMarkedA = new boolean[digraph.V()];
-                final boolean[] isMarkedB = new boolean[digraph.V()];
-                final int[] distanceA = new int[digraph.V()];
-                final int[] distanceB = new int[digraph.V()];
-                int curMinIndex = findMinDistIndex(idA, idB, isMarkedA, isMarkedB, distanceA, distanceB, distanceAB);
+                int curMinIndex = findMinDistIndex(idA, idB, new boolean[digraph.V()], new boolean[digraph.V()], new int[digraph.V()], new int[digraph.V()], distanceAB);
                 if (minDistIndex == -1 || curMinIndex != -1 && distanceAB[curMinIndex] < minDist) {
                     minDistIndex = curMinIndex;
                     minDist = distanceAB[curMinIndex];
@@ -71,7 +67,7 @@ public class SAP {
     private void check(Iterable<Integer> v, Iterable<Integer> w) {
         for (Integer idA : v) {
             for (Integer idB : w) {
-                if (idA < 0 || idA > digraph.V() - 1 || idB < 0 || idB > digraph.V() - 1) throw new IllegalArgumentException();
+                if (idA == null || idB == null || idA < 0 || idA > digraph.V() - 1 || idB < 0 || idB > digraph.V() - 1) throw new IllegalArgumentException();
             }
         }
     }

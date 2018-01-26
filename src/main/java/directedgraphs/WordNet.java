@@ -34,7 +34,7 @@ public class WordNet {
         nounsMap = new TreeMap<>();
         synsetList.forEach(synset -> {
             synset.sinonims.forEach(sinonim -> {
-                List<Integer> list = (nounsMap.containsKey(sinonim)) ? nounsMap.get(sinonim) : new LinkedList();
+                List<Integer> list = (nounsMap.containsKey(sinonim)) ? nounsMap.get(sinonim) : new LinkedList<>();
                 list.add(synset.id);
                 if (!nounsMap.containsKey(sinonim)) {
                     nounsMap.put(sinonim, list);
@@ -66,11 +66,7 @@ public class WordNet {
         for (Integer idA : nounsMap.get(nounA)) {
             for (Integer idB : nounsMap.get(nounB)) {
                 int[] distanceAB = new int[synsetList.size()];
-                final boolean[] isMarkedA = new boolean[synsetList.size()];
-                final boolean[] isMarkedB = new boolean[synsetList.size()];
-                final int[] distanceA = new int[synsetList.size()];
-                final int[] distanceB = new int[synsetList.size()];
-                int curMinIndex = findMinDistIndex(idA, idB, isMarkedA, isMarkedB, distanceA, distanceB, distanceAB);
+                int curMinIndex = findMinDistIndex(idA, idB, new boolean[synsetList.size()], new boolean[synsetList.size()], new int[synsetList.size()], new int[synsetList.size()], distanceAB);
                 if (minDistIndex == -1 || curMinIndex != -1 && distanceAB[curMinIndex] < minDist) {
                     minDistIndex = curMinIndex;
                     minDist = distanceAB[curMinIndex];
